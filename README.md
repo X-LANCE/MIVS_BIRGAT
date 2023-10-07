@@ -17,11 +17,13 @@ conda install --file requirements.txt
 
 ## Data Description
 
+### MIVS
+
 The multi-intent MIVS dataset contains 5 different domains, namely `map`, `weather`, `phone`, `in-vehicle control` and `music`. The entire dataset can be split into two parts: single-domain and multi-domain. Single-domain examples contain both single-intent and multi-intent cases, which are collected and manually annotated from a realistic industrial in-vehicle environment. For cross-domain samples, we automatically synthesize them following MixATIS. Concretely, we extract two utterances from two different domains and concatenate them by conjunction words such as `and`.
-The output tree can be serialized as a token sequence by inserting sentinel tokens such as brackets for clustering. This serialized format is exactly the output of our model. Annotated examples from both single-domain and multi-domain are given in the following table.
+<!-- The output tree can be serialized as a token sequence by inserting sentinel tokens such as brackets for clustering. This serialized format is exactly the output of our model. Annotated examples from both single-domain and multi-domain are given in the following table. -->
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/mivs_example.png" alt="MIVS examples" width="60%"/>
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/mivs_example.png" alt="MIVS examples" width="80%"/>
 </p>
 
 MIVS dataset contains $105,240$ samples in total. It can be further split by two parts: single-domain and multi-domain. The statistics of single-domain examples~($5$ domains) are listed in the below table. 
@@ -41,6 +43,22 @@ Domains | avg. domain | avg. intent | avg. slot
 -------| --- | --- |--- 
 TOPv2 | 1 | 1.1 | 1.8
 MIVS | 1.6 | 2.3 | 6.3
+
+### Privacy and Anonymization
+
+Preventing leakage of personal identifiable information (PII) is one major concern in practical deployment. To handle privacy constraints, we carry out a slot-based manual check followed by automatic substitution. For example, we discover that the sensitive information mainly lies in two slots "*contact person*" and  "*phone number*" in domain `phone`. For anonymity consideration, we replace the person name with one placeholder from a pool of popular names. Similarly, the phone number is also substituted with a randomly sampled digit sequence of the equivalent length.
+
+### Data Format Conversion of TOPv2
+The original outputs in TOPv2 is organized as a token sequence, including raw question words and ontology items, exemplified in following table. We convert the target semantic representation into the same format as MIVS based on the following criterion:
+-  Names of intents and slots are simplified into meaningful lowercased English words. The prefix `IN:` or `SL:` is removed, and the underscore `_` is replaced with a whitespace.
+- Only question words bounded with slots are preserved and treated as slot values, while words wrapped by intents are ignored. Notice that in TOPv2, intents can also be children of slots~(the second example in the following table). In this case, the word `tomorrows` in the scope of this child intent `IN:GET_TIME` is part of the slot value `tomorrows alarms` for the outer slot `SL:ALARM_NAME`.
+- The nested intent and its children slots are extracted and treated as the right sibling of the current intent. For example, in the second case of the below table, the inner intent `IN:GET_TIME` and its child slot-value pair `SL:DATE_TIME=tomorrows` are treated as a separate sub-tree under the domain `alarm`.
+- In total, $23$ data samples are removed which contain slots without slot values.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/topv2_example.png" alt="TOPv2 examples" width="80%"/>
+</p>
+
 
 
 ## Training and Evaluation
