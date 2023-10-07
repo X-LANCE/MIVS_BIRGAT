@@ -5,11 +5,9 @@ This repository contains the MIVS dataset and codes to train our BiRGAT model in
 ## Requirements
 
 The required python packages is listed in "requirements.txt". You can install them by
-
 ```
 pip install -r requirements.txt
 ```
-
 or
 
 ```
@@ -19,10 +17,47 @@ conda install --file requirements.txt
 
 ## Data Description
 
-Please unzip the file in the `data` folder, i.e., `data/aispeech.zip` and `data/topv2.zip`, which correspond to our proposed MIVS dataset and the converted TOPV2 dataset, respectively.
+The multi-intent MIVS dataset contains 5 different domains, namely `map`, `weather`, `phone`, `in-vehicle control` and `music`. The entire dataset can be split into two parts: single-domain and multi-domain. Single-domain examples contain both single-intent and multi-intent cases, which are collected and manually annotated from a realistic industrial in-vehicle environment. For cross-domain samples, we automatically synthesize them following MixATIS. Concretely, we extract two utterances from two different domains and concatenate them by conjunction words such as `and`.
+The output tree can be serialized as a token sequence by inserting sentinel tokens such as brackets for clustering. This serialized format is exactly the output of our model. Annotated examples from both single-domain and multi-domain are given in the following table.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/mivs_example.png" alt="MIVS examples" width="60%"/>
+</p>
+
+MIVS dataset contains $105,240$ samples in total. It can be further split by two parts: single-domain and multi-domain. The statistics of single-domain examples~($5$ domains) are listed in the below table. 
+
+Domains | # Intents | # Slots | # Train | # Valid | # Test
+-------| --- | --- |--- | --- | ---
+in-vehicle control | 3 | 18 | 16000 | 2000 | 2000
+map | 6 | 16 | 4000 | 500 | 500
+music | 7 | 27 | 4000 | 500 | 500
+weather | 18 | 24 | 4000 | 500 | 500
+phone | 8 | 13 | 3249 | 500 | 491
+**total** | 42 | 98 | 31249 | 4000 | 3991
+
+For the multi-domain partition, we synthesize examples for all $C_5^2=10$ different domain combinations. The average domain, intent and slot mentioned per utterance over the entire dataset is provided in the following table.
+
+Domains | avg. domain | avg. intent | avg. slot
+-------| --- | --- |--- 
+TOPv2 | 1 | 1.1 | 1.8
+MIVS | 1.6 | 2.3 | 6.3
 
 
 ## Training and Evaluation
+
+### Data Preparation
+
+Please unzip the file in the `data` folder, i.e., `data/aispeech.zip` and `data/topv2.zip`, which correspond to our proposed MIVS dataset and the converted TOPV2 dataset, respectively.
+
+After unzipping the data files, you will get the following folder structure:
+- train:
+    - cross_data: Each file in this directory contains samples from two domains
+    - one_domain_data: Each file in this directory contains samples from a single domain
+    - null_data: Contains only one file, null.json, with empty parsing results
+    - cross_data_multi: An enhanced version of cross_data, where "车载控制_multi" is more challenging than "车载控制," and "车载控制_multi_5_10" is too complex and is not considered for now
+- valid: Same structure as the train directory
+- test: Same structure as the train directory
+- ontology.json: 
 
 ### Pre-processing
 
