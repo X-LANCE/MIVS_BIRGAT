@@ -9,7 +9,6 @@ __pycache__
 pretrained_models
 saved_models
 database
-data
 log
 exp
 tmp
