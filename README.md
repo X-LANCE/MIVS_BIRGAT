@@ -75,7 +75,7 @@ After unzipping the data files, you will get the following folder structure:
     - cross_data_multi: An enhanced version of cross_data, where "车载控制_multi" is more challenging than "车载控制," and "车载控制_multi_5_10" is too complex and is not considered for now
 - valid: Same structure as the train directory
 - test: Same structure as the train directory
-- ontology.json: 
+- ontology.json: Entire ontology file of the whole dataset
 
 ### Pre-processing
 
@@ -108,3 +108,48 @@ Evaluate the model on the validation and test sets: (Specify the directory of th
 - `--domains`: Used to specify input domains, e.g., `--domains 地图 天气` means that all read data will use the two domains `地图` and `天气`, even if a data sample only involves the `地图` domain. If this parameter is not specified (default is `None`), the default domain for each sample will be automatically used (which could be one or two domains). If this parameter is specified, please ensure that it includes all the domains of the data being read (the program also checks this when reading data files).
 - `--init_method [swv|plm]`: Indicates the initialization method for embedding vectors, either initializing from static word vectors of pre-trained models (`swv`) or using the complete pre-trained model (`plm`).
 - `--ontology_encoding`: Specifies whether to use ontology encoding. If not used, all ontology items are initialized directly from the embedding matrix. Otherwise, semantic encoding initialization is done using text descriptions, such as the intent `播放音乐`. Furthermore, it can be combined with the `--use_value` parameter to enhance the encoding of semantic slots with additional sampled slot values.
+
+## Appendix of our paper
+
+### Relation types in BIRGAT
+
+The relation in our proposed BIRGAT enocder is defined according to the hierarchy of ontology items, namely domain→intent→slot. We show the checklist of all relation types in the below table.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/relation.png" alt="Relation types" width="80%"/>
+</p>
+
+### Implementation Details of Baselines
+
+This part introduces the implementation details of baselines **SL**, **SL+CLF** and **LLM+ICL**.
+
+#### a. SL Method
+Traditional sequence labeling tags each word in the utterance with label `B-slot\_name`, `I-slot\_name` or `O`. Slot value pairs can be easily extracted from the output labeling sequence. However, this strategy can not recover the hierarchical semantic tree on the proposed MIVS dataset. That is, it is unable to determine what the superior intent and domain are for each slot, since some common slots can be shared across different intents or domains. To deal with the complicated output structure, we extend the original label from `B-slot\_name` to `B-domain_name-intent_name-slot_name`. For fair comparison, we also utilize the ontology encoding module to construct the features for each extended label. Given the encoded representation $\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k$ for domain $i$, intent $j$ and slot $k$ respectively, the `B-` series label embedding $\psi(\text{`B'}, o_i, o_j, o_k)$ is calculated by (`I-` series can be easily inferred)
+$$\psi(\text{`B'}, o_i, o_j, o_k)=\text{FFN}(e(\text{`B'}),\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k),$$
+where $e(\text{`B'})$ is the embedding of prefix `B`, which is randomly initialized. Note that the construction of the extended labels should obey the hierarchy of ontology items. In other words, the intent $o_j$ and slot $o_k$ must belongs to domain $o_i$. For the special output label `O`, we initialize it with a random trainable vector of the same dimension as $\psi(\text{`B'}, o_i, o_j, o_k)$. The stacked label matrix is used to perform the classification task for each question word in $Q$. The working flow is illustrated in the below figure.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/sl.pdf" alt="SL method" width="80%"/>
+</p>
+
+####  b. SL+CLF Method
+Traditional SL method fails to tackle the unaligned slot value problem. To compensate for this deficiency, we extract a set of frequently occurred quadruples (domain, intent, slot, value) from the training set. These quadruples are treated as a reserved label memory. Apart from the sequence labeling task, we also conduct a multi-label classification for each entry in the reserved label memory. If the prediction for a specific entry is ``1'', we also append this quadruple to the output list of the primary SL model.
+
+Notice that, both SL and SL+CLF methods obtain a list of quadruples like (domain, intent, slot, value), which requires further post-processing to recover the hierarchical tree structure. We follow the left-to-right order in the original utterance during reconstruction. If a slot-value contradiction exists, we will resolve it by creating a new intent sub-tree. For example, when encountering the quadruple (in-vehicle control, car body control, act, close), since the path `in-vehicle control -> car body control ->act` already exists but with different value `turn on`, we will create a new intent node which also denotes `car body control` as the parent of the slot-value pair `act=close`.
+
+The below table reports the successful conversion rate for each method on datasets MIVS and TOPv2, assuming that the golden annotation are available. According to the percentages, we can find: 1) traditional SL-based methods both fail to successfully recover the entire dataset~($48.1\%$ and $75.3\%$). 2) Although method SL+CLF amends some errors caused by unaligned slot values, it still lacks structural information for lossless transformation~($80.6\%$ and $84.3\%$). 3) Our proposed MIVS is generally more difficult and has more complicated output structures compared to dataset TOPv2~($48.1\%$ v.s. $75.3\%$).
+
+Method | SL | SL+CLF | Ours
+-------| --- | --- |--- 
+TOPv2 | 75.3 | 84.3 | 99.6
+MIVS | 48.1 | 80.6 | 100.0
+
+
+#### c. LLM+ICL Method
+It is a baseline in zero- and few-shot transfer learning settings. We adopt the advanced **text-davinci-003** as the backbone to fulfill the text completion task. The temperature is set to $0$ to encourage strict formatting and semantic coherence. We do not use any penalty strategy during decoding.
+
+The prompt consists of three parts apart from the test utterance: 1) A specification of all ontology items which will be used in both the demonstration exemplars and the test case. 2) A brief task description. 3) Demonstration exemplars that characterize the input-output format. We randomly sample $10$ prompting exemplars and fix them for all test samples. The exemplar pool to sample depends on whether the evaluation is carried out under zero-shot or few-shot settings. More ingenious schemes, such as dynamic exemplar choice, are left as future work. A full example of the prompt is provided in the below table. 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/llm_example.png" alt="Prompt Examples" width="70%"/>
+</p>
