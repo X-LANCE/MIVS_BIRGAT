@@ -129,7 +129,7 @@ $$\psi(\text{`B'}, o_i, o_j, o_k)=\text{FFN}(e(\text{`B'}),\mathbf{o}_i,\mathbf{
 where $e(\text{`B'})$ is the embedding of prefix `B`, which is randomly initialized. Note that the construction of the extended labels should obey the hierarchy of ontology items. In other words, the intent $o_j$ and slot $o_k$ must belongs to domain $o_i$. For the special output label `O`, we initialize it with a random trainable vector of the same dimension as $\psi(\text{`B'}, o_i, o_j, o_k)$. The stacked label matrix is used to perform the classification task for each question word in $Q$. The working flow is illustrated in the below figure.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/sl.pdf" alt="SL method" width="80%"/>
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/sl.png" alt="SL method" width="80%"/>
 </p>
 
 ####  b. SL+CLF Method
