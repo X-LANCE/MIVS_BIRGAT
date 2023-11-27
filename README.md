@@ -111,7 +111,7 @@ Evaluate the model on the validation and test sets: (Specify the directory of th
 
 ## Appendix of our paper
 
-### Relation types in BIRGAT
+### Relation Types in BIRGAT
 
 The relation in our proposed BIRGAT enocder is defined according to the hierarchy of ontology items, namely domain→intent→slot. We show the checklist of all relation types in the below table.
 
@@ -124,9 +124,8 @@ The relation in our proposed BIRGAT enocder is defined according to the hierarch
 This part introduces the implementation details of baselines **SL**, **SL+CLF** and **LLM+ICL**.
 
 #### a. SL Method
-Traditional sequence labeling tags each word in the utterance with label `B-slot\_name`, `I-slot\_name` or `O`. Slot value pairs can be easily extracted from the output labeling sequence. However, this strategy can not recover the hierarchical semantic tree on the proposed MIVS dataset. That is, it is unable to determine what the superior intent and domain are for each slot, since some common slots can be shared across different intents or domains. To deal with the complicated output structure, we extend the original label from `B-slot\_name` to `B-domain_name-intent_name-slot_name`. For fair comparison, we also utilize the ontology encoding module to construct the features for each extended label. Given the encoded representation $\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k$ for domain $i$, intent $j$ and slot $k$ respectively, the `B-` series label embedding $\psi(\text{`B'}, o_i, o_j, o_k)$ is calculated by (`I-` series can be easily inferred)
-$$\psi(\text{`B'}, o_i, o_j, o_k)=\text{FFN}(e(\text{`B'}),\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k),$$
-where $e(\text{`B'})$ is the embedding of prefix `B`, which is randomly initialized. Note that the construction of the extended labels should obey the hierarchy of ontology items. In other words, the intent $o_j$ and slot $o_k$ must belongs to domain $o_i$. For the special output label `O`, we initialize it with a random trainable vector of the same dimension as $\psi(\text{`B'}, o_i, o_j, o_k)$. The stacked label matrix is used to perform the classification task for each question word in $Q$. The working flow is illustrated in the below figure.
+Traditional sequence labeling tags each word in the utterance with label `B-slot_name`, `I-slot_name` or `O`. Slot value pairs can be easily extracted from the output labeling sequence. However, this strategy can not recover the hierarchical semantic tree on the proposed MIVS dataset. That is, it is unable to determine what the superior intent and domain are for each slot, since some common slots can be shared across different intents or domains. To deal with the complicated output structure, we extend the original label from `B-slot_name` to `B-domain_name-intent_name-slot_name`. For fair comparison, we also utilize the ontology encoding module to construct the features for each extended label. Given the encoded representation $\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k$ for domain $i$, intent $j$ and slot $k$ respectively, the `B-` series label embedding $\Psi(B, o_i, o_j, o_k)$ is calculated by (`I-` series can be easily inferred) $\Psi(B, o_i, o_j, o_k)=FFN(e(B),\mathbf{o}_i,\mathbf{o}_j,\mathbf{o}_k),$
+where $e(B)$ is the embedding of prefix `B`, which is randomly initialized. Note that the construction of the extended labels should obey the hierarchy of ontology items. In other words, the intent $o_j$ and slot $o_k$ must belongs to domain $o_i$. For the special output label `O`, we initialize it with a random trainable vector of the same dimension as $\Psi(B, o_i, o_j, o_k)$. The stacked label matrix is used to perform the classification task for each question word in $Q$. The working flow is illustrated in the below figure.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/sl.png" alt="SL method" width="80%"/>
@@ -153,3 +152,11 @@ The prompt consists of three parts apart from the test utterance: 1) A specifica
 <p align="center">
   <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/llm_example.png" alt="Prompt Examples" width="70%"/>
 </p>
+
+### Case Study on TOPv2
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/importpandas/MIVS_BIRGAT/main/assets/topv2_case_study.png" alt="Case study" width="80%"/>
+</p>
+
+We present several cases from TOPv2 dataset for case study. The first two cases show the effectiveness of our proposed BiRGAT method. We observe that through the encoding of hierarchical ontology our model give more precise prediction especially on domains and intents detection while the baseline always made mistake. However, the third case indicates that our model will also made mistake on those intents with high semantic similarity. 
